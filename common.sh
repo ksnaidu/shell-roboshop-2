@@ -8,6 +8,7 @@ N="\e[0m"
 LOGS_FOLDER="/var/log/roboshop-logs"
 SCRIPT_NAME=$(echo $0 | cut -d "." -f1)
 LOG_FILE="$LOGS_FOLDER/$SCRIPT_NAME.log"
+SCRIPT_DIR=$PWD
 
 mkdir -p $LOGS_FOLDER
 echo "Script started executing at: $(date)" | tee -a $LOG_FILE
@@ -43,4 +44,52 @@ END_TIME=$(date +%s)
 TOTAL_TIME=$(( $END_TIME - $START_TIME ))
 
 echo -e "Script exection completed successfully, $Y time taken: $TOTAL_TIME seconds $N" | tee -a $LOG_FILE
+}
+
+nodejs_setup(){
+    
+    dnf module disable nodejs -y &>>$LOG_FILE
+    VALIDATE $? "Disabling node js"
+
+    dnf module enable nodejs:20 -y &>>$LOG_FILE
+    VALIDATE $? "Enabling nodejs:20"
+
+    dnf install nodejs -y &>>$LOG_FILE
+    VALIDATE $? "Installing nodejs"
+
+    npm install &>>$LOG_FILE
+    VALIDATE $? "Npm dependencies installing"
+}
+
+app_setup(){
+
+    id roboshop &>>$LOG_FILE
+    if [ $? -ne 0 ]
+    then
+        useradd --system --home /app --shell /sbin/nologin --comment "roboshop system user" roboshop
+        VALIDATE $? "creating roboshop system user"
+    else
+        echo -e "System user roboshop already created ...$Y SKIPPING $N"
+    fi
+
+    mkdir -p /app
+    VALIDATE $? "Creating app directory"
+
+    curl -o /tmp/$app_name.zip https://roboshop-artifacts.s3.amazonaws.com/$app_name-v3.zip &>>$LOG_FILE
+    VALIDATE $? "Downloading catalogue"
+
+    rm -rf /app/*
+    cd /app 
+    unzip /tmp/$app_name.zip &>>$LOG_FILE
+    VALIDATE $? "Unzipping catalogue"
+}
+
+systemd_setup(){
+    cp $SCRIPT_DIR/$app_name.service /etc/systemd/system/$app_nmae.service &>>$LOG_FILE
+    VALIDATE $? "copying catalogue service"
+
+    systemctl daemon-reload &>>$LOG_FILE
+    systemctl enable catalogue 
+    systemctl start catalogue
+    VALIDATE $? "starting catalogue"
 }
