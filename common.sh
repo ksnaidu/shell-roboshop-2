@@ -93,3 +93,15 @@ systemd_setup(){
     systemctl start $app_name
     VALIDATE $? "starting $app_name"
 }
+
+maven_setup(){
+    dnf install maven -y &>>$LOG_FILE
+    VALIDATE $? "Installing Maven and Java"
+
+    mvn clean package  &>>$LOG_FILE
+    VALIDATE $? "Packaging the shipping application"
+
+    mv target/shipping-1.0.jar shipping.jar  &>>$LOG_FILE
+    VALIDATE $? "Moving and renaming Jar file"
+
+}
