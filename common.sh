@@ -116,3 +116,19 @@ python_setup(){
     VALIDATE $? "copying payment service"
 }
 
+golang_setup(){
+    dnf install golang -y
+    VALIDATE $? "Installing golang"
+
+    if [ ! -f go.mod ] ; then
+    go mod init dispatch &>>$LOG_FILE
+    VALIDATE $? "initilizing go module"
+    fi
+
+    go mod tidy &>>$LOG_FILE
+    VALIDATE $? "Downloading dependency"
+
+    go build &>>$LOG_FILE
+    VALIDATE $? "Building disptch sevice"
+
+}
