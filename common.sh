@@ -105,3 +105,14 @@ maven_setup(){
     VALIDATE $? "Moving and renaming Jar file"
 
 }
+
+python_setup(){
+    dnf install python3 gcc python3-devel -y
+    VALIDATE $? "Installing python3 gcc python3-devel"
+    pip3 install -r requirements.txt &>>$LOG_FILE
+    VALIDATE $? "Pip3 installing"
+
+    cp $SCRIPT_DIR/payment.service /etc/systemd/system/payment.service
+    VALIDATE $? "copying payment service"
+}
+
